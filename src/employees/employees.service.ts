@@ -260,4 +260,22 @@ export class EmployeesService {
     return employee;
   }
 
+  async getKPIsForTask(employeeId: string, taskId: string, tenantId: string): Promise<KpiDto[]> {
+    if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
+      throw new BadRequestException('Invalid IDs');
+    }
+
+    const EmployeeMModel = await this.getModelForTenant(tenantId);
+    const employee = await EmployeeMModel.findOne(
+      { _id: employeeId, 'tasks._id': taskId, tenantId },
+      { 'tasks.$': 1 }
+    );
+
+    if (!employee || employee.tasks.length === 0) {
+      throw new NotFoundException('Employee or Task not found');
+    }
+
+    return employee.tasks[0].kpis;
+  }
+
 }
