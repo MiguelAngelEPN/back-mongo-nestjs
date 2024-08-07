@@ -7,7 +7,7 @@ export class KPI {
   title: string;
 
   @Prop({ required: true})
-  target: string;
+  target: number;
 
   @Prop({ required: true})
   timeUnit: number;

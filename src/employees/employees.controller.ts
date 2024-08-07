@@ -109,6 +109,16 @@ export class EmployeesController {
     return this.employeesService.getTasksLogsToTask(employeeId, taskId, tenantId);
   }
 
+  @Get(':employeeId/tasks/:taskId/tasklog-keys')
+    async getTaskLogKeys(
+        @Param('employeeId') employeeId: string,
+        @Param('taskId') taskId: string,
+        @Req() req
+    ): Promise<string[]> {
+        const tenantId = req['tenantId'];
+        return this.employeesService.getTaskLogKeys(employeeId, taskId, tenantId);
+    }
+
   //<-------------------------------------- KPI's ----------------------------------------->
   @Post('department/:department/tasks')
   addTaskToDepartment(@Param('department') department: string, @Body() taskDto: CreateTaskDto, @Req() req) {
@@ -137,6 +147,7 @@ export class EmployeesController {
     const tenantId = req['tenantId'];
     return await this.employeesService.getSpecificTaskLogValues(employeeId, taskId, key, tenantId);
   }
+
 
   @Get(':employeeId/tasks/:taskId/kpis')
   async getKPIsForTask(

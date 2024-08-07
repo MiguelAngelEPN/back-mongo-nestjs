@@ -5,9 +5,9 @@ export class KpiDto {
   @IsNotEmpty()
   readonly title: string;
 
-  @IsString()
+  @IsNumber()
   @IsNotEmpty()
-  readonly target: string;
+  readonly target: number;
 
   @IsNumber()
   @IsNotEmpty()

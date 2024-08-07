@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Model, Connection, Schema, Types } from 'mongoose';
 import { Employee } from './employee.schema';
+import { Task, TaskLog } from './employee.schema'; // Ajusta la ruta según tu proyecto
 
 import { isValidObjectId } from 'mongoose';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
@@ -182,19 +183,19 @@ export class EmployeesService {
 
   async getTasksLogsToTask(employeeId: string, taskId: string, tenantId: string): Promise<any[]> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
-        throw new BadRequestException('Invalid ID');
+      throw new BadRequestException('Invalid ID');
     }
 
     const EmployeeModel = await this.getModelForTenant(tenantId);
 
     // Find the employee and the specific task within the employee's tasks array
     const employee = await EmployeeModel.findOne(
-        { _id: employeeId, tenantId, 'tasks._id': taskId },
-        { 'tasks.$': 1 } // Only select the task that matches taskId
+      { _id: employeeId, tenantId, 'tasks._id': taskId },
+      { 'tasks.$': 1 } // Only select the task that matches taskId
     );
 
     if (!employee) {
-        throw new NotFoundException('Employee or Task not found');
+      throw new NotFoundException('Employee or Task not found');
     }
 
     // Get the task
@@ -202,7 +203,7 @@ export class EmployeesService {
 
     // Return the tasklogs of the specific task
     return task.tasklogs;
-}
+  }
 
   async addTaskLogToTask(employeeId: string, taskId: string, tasklogDto: any, tenantId: string): Promise<Employee> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
@@ -224,7 +225,7 @@ export class EmployeesService {
   }
 
 
-  async getSpecificTaskLogValues(employeeId: string, taskId: string, key: string, tenantId: string): Promise<any> {
+  async getSpecificTaskLogValues(employeeId: string, taskId: string, key: string, tenantId: string): Promise<{ values: any[], kpiPercentage: number }> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
       throw new BadRequestException('Invalid ID');
     }
@@ -244,14 +245,66 @@ export class EmployeesService {
     const taskLogs = task.tasklogs;
 
     if (!taskLogs || taskLogs.length === 0) {
-      return { values: [], average: 0, sum: 0 };
+      return { values: [], kpiPercentage: 0 };
     }
 
     const values = taskLogs.map((log) => log[key]).filter((value) => value !== undefined);
-    return {
-      values
-    };
+
+    // Para calcular el número de clientes únicos
+    const uniqueValues = [...new Set(values)];
+
+    // Supongamos que queremos usar el primer KPI para el cálculo
+    const kpiTarget = task.kpis[0]?.target || 0;
+
+    // Calcular el porcentaje de cumplimiento del KPI
+    const kpiPercentage = kpiTarget ? (uniqueValues.length / kpiTarget) * 100 : 0;
+
+    return { values, kpiPercentage };
   }
+
+  async getTaskLogKeys(employeeId: string, taskId: string, tenantId: string): Promise<string[]> {
+    if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
+        throw new BadRequestException('Invalid ID');
+    }
+
+    const EmployeeModel = await this.getModelForTenant(tenantId);
+
+    const employee = await EmployeeModel.findOne(
+        { _id: employeeId, 'tasks._id': taskId, tenantId },
+        { 'tasks.$': 1 }
+    );
+
+    if (!employee) {
+        throw new NotFoundException('Employee or Task not found');
+    }
+
+    const task = employee.tasks[0];
+    const taskLogs = task.tasklogs;
+
+    if (!taskLogs || taskLogs.length === 0) {
+        throw new NotFoundException('No task logs found');
+    }
+
+    const firstTaskLog = taskLogs[0];
+
+    // Comprobar si registerDate está presente
+    if (!firstTaskLog.hasOwnProperty('registerDate')) {
+        firstTaskLog.registerDate = new Date();
+    }
+
+    const validKeys = Object.keys(firstTaskLog).filter(key => {
+        return ![
+            '__parentArray', 
+            '__index', 
+            '$__parent', 
+            '$__', 
+            '_doc', 
+            '$isNew'
+        ].includes(key);
+    });
+
+    return validKeys;
+}
   //<-------------------------------------- KPI's ----------------------------------------->
 
   async addTaskToDepartment(department: string, taskDto: CreateTaskDto, tenantId: string): Promise<{ message: string }> {
