@@ -16,8 +16,7 @@ export class KPI {
 @Schema({ strict: false})
 export class TaskLog {
   @Prop({ required: true, default: Date.now })
-  registerDate: Date;
-  
+  registerDate: Date; 
 }
 
 @Schema()

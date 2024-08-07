@@ -99,6 +99,15 @@ export class EmployeesController {
     return this.employeesService.addTaskLogToTask(employeeId, taskId, taskLogDto, tenantId);
   }
 
+  @Get(':employeeId/task/:taskId/tasklogs')
+  getTasksLogsToTaskId(
+    @Param('employeeId') employeeId: string,
+    @Param('taskId') taskId: string,
+    @Req() req
+  ){
+    const tenantId = req['tenantId'];
+    return this.employeesService.getTasksLogsToTask(employeeId, taskId, tenantId);
+  }
 
   //<-------------------------------------- KPI's ----------------------------------------->
   @Post('department/:department/tasks')

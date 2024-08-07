@@ -180,6 +180,30 @@ export class EmployeesService {
 
   //<-------------------------------------- TaskLogs ----------------------------------------->
 
+  async getTasksLogsToTask(employeeId: string, taskId: string, tenantId: string): Promise<any[]> {
+    if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
+        throw new BadRequestException('Invalid ID');
+    }
+
+    const EmployeeModel = await this.getModelForTenant(tenantId);
+
+    // Find the employee and the specific task within the employee's tasks array
+    const employee = await EmployeeModel.findOne(
+        { _id: employeeId, tenantId, 'tasks._id': taskId },
+        { 'tasks.$': 1 } // Only select the task that matches taskId
+    );
+
+    if (!employee) {
+        throw new NotFoundException('Employee or Task not found');
+    }
+
+    // Get the task
+    const task = employee.tasks[0];
+
+    // Return the tasklogs of the specific task
+    return task.tasklogs;
+}
+
   async addTaskLogToTask(employeeId: string, taskId: string, tasklogDto: any, tenantId: string): Promise<Employee> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
       throw new BadRequestException('Invalid ID');
