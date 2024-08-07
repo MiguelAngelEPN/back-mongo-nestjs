@@ -137,7 +137,16 @@ export class EmployeesController {
     const tenantId = req['tenantId'];
     return await this.employeesService.getSpecificTaskLogValues(employeeId, taskId, key, tenantId);
   }
-  
 
+  @Get(':employeeId/tasks/:taskId/kpis')
+  async getKPIsForTask(
+    @Param('employeeId') employeeId: string,
+    @Param('taskId') taskId: string,
+    @Req() req
+  ) {
+    const tenantId = req['tenantId'];
+    return this.employeesService.getKPIsForTask(employeeId, taskId, tenantId);
+  }
+  
 }
 
