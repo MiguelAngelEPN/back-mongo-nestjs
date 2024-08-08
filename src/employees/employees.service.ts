@@ -264,47 +264,47 @@ export class EmployeesService {
 
   async getTaskLogKeys(employeeId: string, taskId: string, tenantId: string): Promise<string[]> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
-        throw new BadRequestException('Invalid ID');
+      throw new BadRequestException('Invalid ID');
     }
 
     const EmployeeModel = await this.getModelForTenant(tenantId);
 
     const employee = await EmployeeModel.findOne(
-        { _id: employeeId, 'tasks._id': taskId, tenantId },
-        { 'tasks.$': 1 }
+      { _id: employeeId, 'tasks._id': taskId, tenantId },
+      { 'tasks.$': 1 }
     );
 
     if (!employee) {
-        throw new NotFoundException('Employee or Task not found');
+      throw new NotFoundException('Employee or Task not found');
     }
 
     const task = employee.tasks[0];
     const taskLogs = task.tasklogs;
 
     if (!taskLogs || taskLogs.length === 0) {
-        throw new NotFoundException('No task logs found');
+      throw new NotFoundException('No task logs found');
     }
 
     const firstTaskLog = taskLogs[0];
 
     // Comprobar si registerDate está presente
     if (!firstTaskLog.hasOwnProperty('registerDate')) {
-        firstTaskLog.registerDate = new Date();
+      firstTaskLog.registerDate = new Date();
     }
 
     const validKeys = Object.keys(firstTaskLog).filter(key => {
-        return ![
-            '__parentArray', 
-            '__index', 
-            '$__parent', 
-            '$__', 
-            '_doc', 
-            '$isNew'
-        ].includes(key);
+      return ![
+        '__parentArray',
+        '__index',
+        '$__parent',
+        '$__',
+        '_doc',
+        '$isNew'
+      ].includes(key);
     });
 
     return validKeys;
-}
+  }
   //<-------------------------------------- KPI's ----------------------------------------->
 
   async addTaskToDepartment(department: string, taskDto: CreateTaskDto, tenantId: string): Promise<{ message: string }> {
@@ -329,7 +329,7 @@ export class EmployeesService {
     const timeUnit = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)); // Días entre las fechas
 
     const EmployeeMModel = await this.getModelForTenant(tenantId);
-    
+
     // Añadir el timeUnit calculado al KPI
     const kpiWithTimeUnit = {
       ...kpiDto,
@@ -366,5 +366,32 @@ export class EmployeesService {
 
     return employee.tasks[0].kpis;
   }
-
+  
+  async getKPIbyID(employeeId: string, taskId: string, kpiId: string, tenantId: string): Promise<KpiDto> {
+    if (!isValidObjectId(employeeId) || !isValidObjectId(taskId) || !isValidObjectId(kpiId)) {
+      throw new BadRequestException('Invalid IDs');
+    }
+  
+    const EmployeeModel = await this.getModelForTenant(tenantId);
+    const employee = await EmployeeModel.findOne(
+      { _id: employeeId, 'tasks._id': taskId, tenantId },
+      { 'tasks.$': 1 } // Obtén solo el task correspondiente
+    ).exec();
+  
+    if (!employee || !employee.tasks.length) {
+      throw new NotFoundException('Employee or Task not found');
+    }
+  
+    const task = employee.tasks[0];
+    
+    // Buscar el KPI en el array `kpis` usando la función `find`
+    const kpi = task.kpis.find(kpi => kpi['_id'].toString() === kpiId);
+  
+    if (!kpi) {
+      throw new NotFoundException('KPI not found');
+    }
+  
+    return kpi;
+  }
+  
 }

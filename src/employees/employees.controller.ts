@@ -104,20 +104,20 @@ export class EmployeesController {
     @Param('employeeId') employeeId: string,
     @Param('taskId') taskId: string,
     @Req() req
-  ){
+  ) {
     const tenantId = req['tenantId'];
     return this.employeesService.getTasksLogsToTask(employeeId, taskId, tenantId);
   }
 
   @Get(':employeeId/tasks/:taskId/tasklog-keys')
-    async getTaskLogKeys(
-        @Param('employeeId') employeeId: string,
-        @Param('taskId') taskId: string,
-        @Req() req
-    ): Promise<string[]> {
-        const tenantId = req['tenantId'];
-        return this.employeesService.getTaskLogKeys(employeeId, taskId, tenantId);
-    }
+  async getTaskLogKeys(
+    @Param('employeeId') employeeId: string,
+    @Param('taskId') taskId: string,
+    @Req() req
+  ): Promise<string[]> {
+    const tenantId = req['tenantId'];
+    return this.employeesService.getTaskLogKeys(employeeId, taskId, tenantId);
+  }
 
   //<-------------------------------------- KPI's ----------------------------------------->
   @Post('department/:department/tasks')
@@ -159,5 +159,15 @@ export class EmployeesController {
     return this.employeesService.getKPIsForTask(employeeId, taskId, tenantId);
   }
   
+  @Get(':employeeId/tasks/:taskId/kpis/:kpiId')
+  async getKPIbyID(
+    @Param('employeeId') employeeId: string,
+    @Param('taskId') taskId: string,
+    @Param('kpiId') kpiId: string,
+    @Req() req
+  ) {
+    const tenantId = req['tenantId'];
+    return this.employeesService.getKPIbyID(employeeId, taskId, kpiId, tenantId);
+  }
 }
 
