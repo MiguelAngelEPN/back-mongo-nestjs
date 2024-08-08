@@ -9,6 +9,12 @@ export class KPI {
   @Prop({ required: true})
   target: number;
 
+  @Prop({ required: true })
+  startDate: Date;
+
+  @Prop({ required: true })
+  endDate: Date;
+
   @Prop({ required: true})
   timeUnit: number;
 }

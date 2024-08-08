@@ -1,4 +1,5 @@
 import { IsString, IsNotEmpty, IsDate, IsOptional, IsNumber, Min, Max } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class KpiDto {
   @IsString()
@@ -9,7 +10,15 @@ export class KpiDto {
   @IsNotEmpty()
   readonly target: number;
 
-  @IsNumber()
   @IsNotEmpty()
-  readonly timeUnit: number;
+  @IsDate()
+  @Transform(({ value }) => new Date(value))
+  readonly startDate: Date;
+
+  @IsNotEmpty()
+  @IsDate()
+  @Transform(({ value }) => new Date(value))
+  readonly endDate: Date;
+
+  readonly timeUnit?: number;
 }

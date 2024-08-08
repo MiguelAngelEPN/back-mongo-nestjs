@@ -323,10 +323,22 @@ export class EmployeesService {
       throw new BadRequestException('Invalid IDs');
     }
 
+    // Calcula el número de días entre startDate y endDate
+    const startDate = new Date(kpiDto.startDate);
+    const endDate = new Date(kpiDto.endDate);
+    const timeUnit = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)); // Días entre las fechas
+
     const EmployeeMModel = await this.getModelForTenant(tenantId);
+    
+    // Añadir el timeUnit calculado al KPI
+    const kpiWithTimeUnit = {
+      ...kpiDto,
+      timeUnit,
+    };
+
     const employee = await EmployeeMModel.findOneAndUpdate(
       { _id: employeeId, 'tasks._id': taskId, tenantId },
-      { $push: { 'tasks.$.kpis': kpiDto } },
+      { $push: { 'tasks.$.kpis': kpiWithTimeUnit } },
       { new: true, useFindAndModify: false }
     );
 
