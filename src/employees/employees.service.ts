@@ -225,42 +225,51 @@ export class EmployeesService {
   }
 
 
-  async getSpecificTaskLogValues(employeeId: string, taskId: string, key: string, tenantId: string): Promise<{ values: any[], kpiPercentage: number }> {
-    if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
-      throw new BadRequestException('Invalid ID');
+  async getSpecificTaskLogValues(
+    employeeId: string, 
+    taskId: string, 
+    key: string, 
+    tenantId: string
+  ): Promise<{ values: any[], kpiPercentage: number, totalCount: number }> {
+      if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
+        throw new BadRequestException('Invalid ID');
+      }
+  
+      const EmployeeModel = await this.getModelForTenant(tenantId);
+  
+      const employee = await EmployeeModel.findOne(
+        { _id: employeeId, 'tasks._id': taskId, tenantId },
+        { 'tasks.$': 1 }
+      );
+  
+      if (!employee) {
+        throw new NotFoundException('Employee or Task not found');
+      }
+  
+      const task = employee.tasks[0];
+      const taskLogs = task.tasklogs;
+  
+      if (!taskLogs || taskLogs.length === 0) {
+        return { values: [], kpiPercentage: 0, totalCount: 0 };
+      }
+  
+      const values = taskLogs.map((log) => log[key]).filter((value) => value !== undefined);
+  
+      // Para calcular el número de clientes únicos
+      const uniqueValues = [...new Set(values)];
+  
+      // Supongamos que queremos usar el primer KPI para el cálculo
+      const kpiTarget = task.kpis[0]?.target || 0;
+  
+      // Calcular el porcentaje de cumplimiento del KPI
+      const kpiPercentage = kpiTarget ? (uniqueValues.length / kpiTarget) * 100 : 0;
+  
+      // Obtener el conteo total de registros en la columna
+      const totalCount = values.length;
+  
+      return { values, kpiPercentage, totalCount };
     }
-
-    const EmployeeModel = await this.getModelForTenant(tenantId);
-
-    const employee = await EmployeeModel.findOne(
-      { _id: employeeId, 'tasks._id': taskId, tenantId },
-      { 'tasks.$': 1 }
-    );
-
-    if (!employee) {
-      throw new NotFoundException('Employee or Task not found');
-    }
-
-    const task = employee.tasks[0];
-    const taskLogs = task.tasklogs;
-
-    if (!taskLogs || taskLogs.length === 0) {
-      return { values: [], kpiPercentage: 0 };
-    }
-
-    const values = taskLogs.map((log) => log[key]).filter((value) => value !== undefined);
-
-    // Para calcular el número de clientes únicos
-    const uniqueValues = [...new Set(values)];
-
-    // Supongamos que queremos usar el primer KPI para el cálculo
-    const kpiTarget = task.kpis[0]?.target || 0;
-
-    // Calcular el porcentaje de cumplimiento del KPI
-    const kpiPercentage = kpiTarget ? (uniqueValues.length / kpiTarget) * 100 : 0;
-
-    return { values, kpiPercentage };
-  }
+  
 
   async getTaskLogKeys(employeeId: string, taskId: string, tenantId: string): Promise<string[]> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
