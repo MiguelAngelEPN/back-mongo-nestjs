@@ -280,7 +280,7 @@ export class EmployeesService {
       return logDate >= start && logDate <= end && !excludedDayIndices.includes(dayOfWeek);
     });
 
-    const kpi = task.kpis[1]; // Asumiendo que estamos evaluando el primer KPI, puedes ajustar esto según tu lógica
+    const kpi = task.kpis[0]; // Asumiendo que estamos evaluando el primer KPI, puedes ajustar esto según tu lógica
     const key = kpi?.fieldtobeevaluated;
 
     const values = filteredTaskLogs.map((log) => log[key]).filter((value) => value !== undefined);
