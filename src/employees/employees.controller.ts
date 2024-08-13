@@ -141,13 +141,13 @@ export class EmployeesController {
   async getTaskLogValues(
     @Param('employeeId') employeeId: string,
     @Param('taskId') taskId: string,
-    @Body() body: { key: string, startDate: Date, endDate: Date },
+    @Body() body: { key: string, startDate: Date, endDate: Date, excludedDays: string[] },
     @Req() req
   ) {
-    const { key, startDate, endDate } = body;
+    const { key, startDate, endDate, excludedDays } = body;
     const tenantId = req['tenantId'];
-    return await this.employeesService.getSpecificTaskLogValues(employeeId, taskId, key, startDate, endDate, tenantId);
-  }  
+    return await this.employeesService.getSpecificTaskLogValues(employeeId, taskId, key, startDate, endDate, excludedDays, tenantId);
+  }
 
 
   @Get(':employeeId/tasks/:taskId/kpis')

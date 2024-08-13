@@ -230,11 +230,13 @@ export class EmployeesService {
     key: string,
     startDate: Date,
     endDate: Date,
+    excludedDays: string[],
     tenantId: string
   ): Promise<{ values: any[], kpiPercentage: number, totalCount: number, daysConsidered: number, targetSales: number }> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
       throw new BadRequestException('Invalid ID');
     }
+    console.log("list ", excludedDays);
 
     const EmployeeModel = await this.getModelForTenant(tenantId);
 
@@ -249,51 +251,57 @@ export class EmployeesService {
 
     const task = employee.tasks[0];
     const taskLogs = task.tasklogs;
+    console.log("tareas: ", taskLogs);
 
     if (!taskLogs || taskLogs.length === 0) {
       return { values: [], kpiPercentage: 0, totalCount: 0, daysConsidered: 0, targetSales: 0 };
     }
 
-    // Asegúrate de que startDate y endDate sean objetos Date
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // Filtrar taskLogs por registerDate excluyendo sábados y domingos
+    // Mapear los nombres de los días en índices (0 = Domingo, 1 = Lunes, ..., 6 = Sábado)
+    const dayMapping: { [key: string]: number } = {
+      sunday: 0,
+      monday: 1,
+      tuesday: 2,
+      wednesday: 3,
+      thursday: 4,
+      friday: 5,
+      saturday: 6,
+    };
+
+    const excludedDayIndices = excludedDays.map(day => dayMapping[day.toLowerCase()]).filter(dayIndex => dayIndex !== undefined);
+    console.log("excluidas dias: ", excludedDayIndices);
+
+    // Filtrar taskLogs por registerDate excluyendo los días especificados
     const filteredTaskLogs = taskLogs.filter(log => {
-      const logDate = new Date(log.registerDate); // Usar registerDate para la comparación
+      const logDate = new Date(log.registerDate);
       const dayOfWeek = logDate.getDay();
-      return logDate >= start && logDate <= end && dayOfWeek !== 0 && dayOfWeek !== 6;
+      return logDate >= start && logDate <= end && !excludedDayIndices.includes(dayOfWeek);
     });
 
     const values = filteredTaskLogs.map((log) => log[key]).filter((value) => value !== undefined);
 
-    // Para calcular el número de clientes únicos
     const uniqueValues = [...new Set(values)];
 
-    // Supongamos que queremos usar el primer KPI para el cálculo
     const kpiTarget = task.kpis[0]?.target || 0;
 
-    // Calcular los días considerados (excluyendo sábados y domingos)
+    // Calcular los días considerados excluyendo los días especificados
     let daysConsidered = 0;
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dayOfWeek = d.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      if (!excludedDayIndices.includes(dayOfWeek)) {
         daysConsidered++;
       }
     }
 
-    // Calcular el número total de ventas a cumplir en el rango de fechas
     const targetSales = daysConsidered * kpiTarget;
-
-    // Calcular el porcentaje de cumplimiento del KPI en base al total de ventas objetivo
     const kpiPercentage = targetSales ? (uniqueValues.length / targetSales) * 100 : 0;
-
-    // Obtener el conteo total de registros en la columna
     const totalCount = values.length;
 
     return { values, kpiPercentage, totalCount, daysConsidered, targetSales };
   }
-
 
 
 
