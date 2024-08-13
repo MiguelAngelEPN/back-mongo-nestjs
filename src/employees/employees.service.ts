@@ -224,7 +224,6 @@ export class EmployeesService {
     return employee;
   }
 
-
   async getSpecificTaskLogValues(
     employeeId: string,
     taskId: string,
@@ -232,7 +231,7 @@ export class EmployeesService {
     startDate: Date,
     endDate: Date,
     tenantId: string
-  ): Promise<{ values: any[], kpiPercentage: number, totalCount: number }> {
+  ): Promise<{ values: any[], kpiPercentage: number, totalCount: number, daysConsidered: number, targetSales: number }> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
       throw new BadRequestException('Invalid ID');
     }
@@ -250,22 +249,21 @@ export class EmployeesService {
 
     const task = employee.tasks[0];
     const taskLogs = task.tasklogs;
-    console.log('list logstask: ', taskLogs);
 
     if (!taskLogs || taskLogs.length === 0) {
-      return { values: [], kpiPercentage: 0, totalCount: 0 };
+      return { values: [], kpiPercentage: 0, totalCount: 0, daysConsidered: 0, targetSales: 0 };
     }
 
     // Asegúrate de que startDate y endDate sean objetos Date
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // Filtrar los taskLogs por registerDate
+    // Filtrar taskLogs por registerDate excluyendo sábados y domingos
     const filteredTaskLogs = taskLogs.filter(log => {
       const logDate = new Date(log.registerDate); // Usar registerDate para la comparación
-      return logDate >= start && logDate <= end;
+      const dayOfWeek = logDate.getDay();
+      return logDate >= start && logDate <= end && dayOfWeek !== 0 && dayOfWeek !== 6;
     });
-    console.log('list logstask time: ', filteredTaskLogs);
 
     const values = filteredTaskLogs.map((log) => log[key]).filter((value) => value !== undefined);
 
@@ -275,14 +273,28 @@ export class EmployeesService {
     // Supongamos que queremos usar el primer KPI para el cálculo
     const kpiTarget = task.kpis[0]?.target || 0;
 
-    // Calcular el porcentaje de cumplimiento del KPI
-    const kpiPercentage = kpiTarget ? (uniqueValues.length / kpiTarget) * 100 : 0;
+    // Calcular los días considerados (excluyendo sábados y domingos)
+    let daysConsidered = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dayOfWeek = d.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        daysConsidered++;
+      }
+    }
+
+    // Calcular el número total de ventas a cumplir en el rango de fechas
+    const targetSales = daysConsidered * kpiTarget;
+
+    // Calcular el porcentaje de cumplimiento del KPI en base al total de ventas objetivo
+    const kpiPercentage = targetSales ? (uniqueValues.length / targetSales) * 100 : 0;
 
     // Obtener el conteo total de registros en la columna
     const totalCount = values.length;
 
-    return { values, kpiPercentage, totalCount };
+    return { values, kpiPercentage, totalCount, daysConsidered, targetSales };
   }
+
+
 
 
 
