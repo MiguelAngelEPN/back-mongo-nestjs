@@ -227,7 +227,6 @@ export class EmployeesService {
   async getSpecificTaskLogValues(
     employeeId: string,
     taskId: string,
-    key: string,
     startDate: Date,
     endDate: Date,
     excludedDays: string[],
@@ -281,6 +280,9 @@ export class EmployeesService {
       return logDate >= start && logDate <= end && !excludedDayIndices.includes(dayOfWeek);
     });
 
+    const kpi = task.kpis[1]; // Asumiendo que estamos evaluando el primer KPI, puedes ajustar esto según tu lógica
+    const key = kpi?.fieldtobeevaluated;
+
     const values = filteredTaskLogs.map((log) => log[key]).filter((value) => value !== undefined);
 
     const uniqueValues = [...new Set(values)];
@@ -302,9 +304,6 @@ export class EmployeesService {
 
     return { values, kpiPercentage, totalCount, daysConsidered, targetSales };
   }
-
-
-
 
   async getTaskLogKeys(employeeId: string, taskId: string, tenantId: string): Promise<string[]> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
@@ -366,27 +365,27 @@ export class EmployeesService {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
       throw new BadRequestException('Invalid IDs');
     }
-  
+
     const EmployeeMModel = await this.getModelForTenant(tenantId);
-  
+
     // Validar que el timeUnit esté entre 0 y 5
     if (kpiDto.timeUnit < 0 || kpiDto.timeUnit > 5) {
       throw new BadRequestException('Invalid timeUnit value. It must be between 0 and 5.');
     }
-  
+
     const employee = await EmployeeMModel.findOneAndUpdate(
       { _id: employeeId, 'tasks._id': taskId, tenantId },
       { $push: { 'tasks.$.kpis': kpiDto } },
       { new: true, useFindAndModify: false }
     );
-  
+
     if (!employee) {
       throw new NotFoundException('Employee or Task not found');
     }
-  
+
     return employee;
   }
-  
+
 
   async getKPIsForTask(employeeId: string, taskId: string, tenantId: string): Promise<KpiDto[]> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
