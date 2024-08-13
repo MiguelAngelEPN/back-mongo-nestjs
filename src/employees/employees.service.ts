@@ -366,32 +366,27 @@ export class EmployeesService {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
       throw new BadRequestException('Invalid IDs');
     }
-
-    // Calcula el número de días entre startDate y endDate
-    const startDate = new Date(kpiDto.startDate);
-    const endDate = new Date(kpiDto.endDate);
-    const timeUnit = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)); // Días entre las fechas
-
+  
     const EmployeeMModel = await this.getModelForTenant(tenantId);
-
-    // Añadir el timeUnit calculado al KPI
-    const kpiWithTimeUnit = {
-      ...kpiDto,
-      timeUnit,
-    };
-
+  
+    // Validar que el timeUnit esté entre 0 y 5
+    if (kpiDto.timeUnit < 0 || kpiDto.timeUnit > 5) {
+      throw new BadRequestException('Invalid timeUnit value. It must be between 0 and 5.');
+    }
+  
     const employee = await EmployeeMModel.findOneAndUpdate(
       { _id: employeeId, 'tasks._id': taskId, tenantId },
-      { $push: { 'tasks.$.kpis': kpiWithTimeUnit } },
+      { $push: { 'tasks.$.kpis': kpiDto } },
       { new: true, useFindAndModify: false }
     );
-
+  
     if (!employee) {
       throw new NotFoundException('Employee or Task not found');
     }
-
+  
     return employee;
   }
+  
 
   async getKPIsForTask(employeeId: string, taskId: string, tenantId: string): Promise<KpiDto[]> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {

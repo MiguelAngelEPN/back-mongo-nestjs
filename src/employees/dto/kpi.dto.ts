@@ -10,15 +10,11 @@ export class KpiDto {
   @IsNotEmpty()
   readonly target: number;
 
+  @IsNumber()
   @IsNotEmpty()
-  @IsDate()
-  @Transform(({ value }) => new Date(value))
-  readonly startDate: Date;
+  readonly timeUnit: number;
 
+  @IsString()
   @IsNotEmpty()
-  @IsDate()
-  @Transform(({ value }) => new Date(value))
-  readonly endDate: Date;
-
-  readonly timeUnit?: number;
+  readonly fieldtobeevaluated: string;
 }
