@@ -137,16 +137,17 @@ export class EmployeesController {
     return this.employeesService.addKPItoTask(employeeId, taskId, kpiDto, tenantId);
   }
 
-  @Get(':employeeId/tasks/:taskId/tasklogs')
+  @Post(':employeeId/tasks/:taskId/tasklogs')
   async getTaskLogValues(
     @Param('employeeId') employeeId: string,
     @Param('taskId') taskId: string,
-    @Query('key') key: string,
+    @Body() body: { key: string, startDate: Date, endDate: Date },
     @Req() req
   ) {
+    const { key, startDate, endDate } = body;
     const tenantId = req['tenantId'];
-    return await this.employeesService.getSpecificTaskLogValues(employeeId, taskId, key, tenantId);
-  }
+    return await this.employeesService.getSpecificTaskLogValues(employeeId, taskId, key, startDate, endDate, tenantId);
+  }  
 
 
   @Get(':employeeId/tasks/:taskId/kpis')
