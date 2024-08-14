@@ -235,30 +235,28 @@ export class EmployeesService {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
       throw new BadRequestException('Invalid ID');
     }
-    console.log("list ", excludedDays);
-
+  
     const EmployeeModel = await this.getModelForTenant(tenantId);
-
+  
     const employee = await EmployeeModel.findOne(
       { _id: employeeId, 'tasks._id': taskId, tenantId },
       { 'tasks.$': 1 }
     );
-
+  
     if (!employee) {
       throw new NotFoundException('Employee or Task not found');
     }
-
+  
     const task = employee.tasks[0];
     const taskLogs = task.tasklogs;
-    console.log("tareas: ", taskLogs);
-
+  
     if (!taskLogs || taskLogs.length === 0) {
       return { values: [], kpiPercentage: 0, totalCount: 0, daysConsidered: 0, targetSales: 0 };
     }
-
+  
     const start = new Date(startDate);
     const end = new Date(endDate);
-
+  
     // Mapear los nombres de los días en índices (0 = Domingo, 1 = Lunes, ..., 6 = Sábado)
     const dayMapping: { [key: string]: number } = {
       sunday: 0,
@@ -269,26 +267,26 @@ export class EmployeesService {
       friday: 5,
       saturday: 6,
     };
-
+  
     const excludedDayIndices = excludedDays.map(day => dayMapping[day.toLowerCase()]).filter(dayIndex => dayIndex !== undefined);
-    console.log("excluidas dias: ", excludedDayIndices);
-
+  
     // Filtrar taskLogs por registerDate excluyendo los días especificados
     const filteredTaskLogs = taskLogs.filter(log => {
       const logDate = new Date(log.registerDate);
       const dayOfWeek = logDate.getDay();
       return logDate >= start && logDate <= end && !excludedDayIndices.includes(dayOfWeek);
     });
-
+  
     const kpi = task.kpis[0]; // Asumiendo que estamos evaluando el primer KPI, puedes ajustar esto según tu lógica
     const key = kpi?.fieldtobeevaluated;
-
+  
     const values = filteredTaskLogs.map((log) => log[key]).filter((value) => value !== undefined);
-
+  
     const uniqueValues = [...new Set(values)];
-
+  
     const kpiTarget = task.kpis[0]?.target || 0;
-
+    const timeUnit = kpi?.timeUnit || 1;
+  
     // Calcular los días considerados excluyendo los días especificados
     let daysConsidered = 0;
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -297,13 +295,18 @@ export class EmployeesService {
         daysConsidered++;
       }
     }
-
-    const targetSales = daysConsidered * kpiTarget;
+  
+    // Calcular el targetSales con decimales
+    const exactQuotient = daysConsidered / timeUnit;
+    const targetSales = exactQuotient * kpiTarget;
+  
+    // Calcular el porcentaje del KPI
     const kpiPercentage = targetSales ? (uniqueValues.length / targetSales) * 100 : 0;
     const totalCount = values.length;
-
+  
     return { values, kpiPercentage, totalCount, daysConsidered, targetSales };
   }
+  
 
   async getTaskLogKeys(employeeId: string, taskId: string, tenantId: string): Promise<string[]> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
