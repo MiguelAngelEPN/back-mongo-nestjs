@@ -354,6 +354,7 @@ export class EmployeesService {
   //<-------------------------------------- KPI's ----------------------------------------->
 
   async addTaskToDepartment(department: string, taskDto: CreateTaskDto, tenantId: string): Promise<{ message: string }> {
+    
     const EmployeeModel = await this.getModelForTenant(tenantId);
 
     await EmployeeModel.updateMany(
@@ -362,6 +363,21 @@ export class EmployeesService {
     ).exec();
 
     return { message: `${department} employees updated with new task` };
+  }
+
+  async getUniqueDepartments(tenantId: string): Promise<string[]> {
+    // Eliminamos la validación de ObjectId si tenantId no es un ObjectId.
+    
+    const EmployeeModel = await this.getModelForTenant(tenantId);
+    
+    // Usar el método `distinct` para obtener los valores únicos del campo "department"
+    const uniqueDepartments = await EmployeeModel.distinct('department', { tenantId });
+    
+    if (!uniqueDepartments || uniqueDepartments.length === 0) {
+      throw new NotFoundException('No departments found');
+    }
+    
+    return uniqueDepartments;
   }
 
   async addKPItoTask(employeeId: string, taskId: string, kpiDto: KpiDto, tenantId: string): Promise<Employee> {

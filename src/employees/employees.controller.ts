@@ -126,6 +126,12 @@ export class EmployeesController {
     return this.employeesService.addTaskToDepartment(department, taskDto, tenantId);
   }
 
+  @Get('departments')
+  getDepartmentsToTenant(@Req() req) {
+    const tenantId = req['tenantId'];
+    return this.employeesService.getUniqueDepartments(tenantId);
+  }
+
   @Post(':employeeId/tasks/:taskId/kpis')
   addKpiToTask(
     @Param('employeeId') employeeId: string,
