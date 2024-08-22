@@ -6,6 +6,8 @@ export class Tenant extends Document {
   companyName: string;
   @Prop({ required: true, unique: true })
   tenantId: string;
+  @Prop({ required: true, minlength: 8})
+  password: string;
 }
 
 export const TenantSchema = SchemaFactory.createForClass(Tenant);
