@@ -9,19 +9,25 @@ export class TenantsController {
     constructor(private readonly tenantsService: TenantsService){}
 
     @Post()
-    async createTenant(@Body() createTenantDto: CreateTenantDto): Promise<Tenant> {
+    async createTenant(@Body() createTenantDto: CreateTenantDto): Promise<{ message: string, status: string, tenant?: Tenant }> {
         const { tenantId, password } = createTenantDto;
 
         // Verificar si el tenantId ya existe
         const existingTenant = await this.tenantsService.getTenantById(tenantId);
         if (existingTenant) {
-            throw new BadRequestException(`Tenant with ID ${tenantId} already exists.`);
+            return {
+                message: `El Tenant con ID ${tenantId} ya existe.`,
+                status: 'error',
+            };
         }
 
         // Verificar la validez de la contraseña
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=])[A-Za-z\d@#$%^&+=]{8,}$/;
         if (!passwordRegex.test(password)) {
-            throw new BadRequestException('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.');
+            return {
+                message: 'La contraseña debe contener al menos una letra mayúscula, una letra minúscula, un número y un carácter especial.',
+                status: 'error',
+            };
         }
 
         // Encriptar la contraseña
@@ -33,7 +39,11 @@ export class TenantsController {
             password: hashedPassword,
         });
 
-        return newTenant;
+        return {
+            message: 'Tenant creado exitosamente.',
+            status: 'success',
+            tenant: newTenant,
+        };
     }
 }
 
