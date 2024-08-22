@@ -144,17 +144,17 @@ export class EmployeesController {
   }
 
   @Post(':employeeId/tasks/:taskId/kpi/:kpiId/evaluation')
-async getTaskLogValues(
-  @Param('employeeId') employeeId: string,
-  @Param('taskId') taskId: string,
-  @Param('kpiId') kpiId: string,
-  @Body() body: { startDate: Date, endDate: Date, excludedDays: string[] },
-  @Req() req
-) {
-  const { startDate, endDate, excludedDays } = body;
-  const tenantId = req['tenantId'];
-  return await this.employeesService.getSpecificTaskLogValues(employeeId, taskId, kpiId, startDate, endDate, excludedDays, tenantId);
-}
+  async getTaskLogValues(
+    @Param('employeeId') employeeId: string,
+    @Param('taskId') taskId: string,
+    @Param('kpiId') kpiId: string,
+    @Body() body: { startDate: Date, endDate: Date, excludedDays: string[] },
+    @Req() req
+  ) {
+    const { startDate, endDate, excludedDays } = body;
+    const tenantId = req['tenantId'];
+    return await this.employeesService.getSpecificTaskLogValues(employeeId, taskId, kpiId, startDate, endDate, excludedDays, tenantId);
+  }
 
   @Get(':employeeId/tasks/:taskId/kpis')
   async getKPIsForTask(
@@ -165,7 +165,7 @@ async getTaskLogValues(
     const tenantId = req['tenantId'];
     return this.employeesService.getKPIsForTask(employeeId, taskId, tenantId);
   }
-  
+
   @Get(':employeeId/tasks/:taskId/kpis/:kpiId')
   async getKPIbyID(
     @Param('employeeId') employeeId: string,

@@ -8,6 +8,10 @@ export class CreateTenantDto {
     @IsNotEmpty()
     @IsString()
     readonly tenantId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    readonly password: string;
 }
 
 
