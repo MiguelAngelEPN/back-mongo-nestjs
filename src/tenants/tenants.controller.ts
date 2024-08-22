@@ -45,5 +45,36 @@ export class TenantsController {
             tenant: newTenant,
         };
     }
+
+    // Autenticación de Tenant (Login)
+    @Post('login')
+    async loginTenant(@Body() loginDto: { tenantId: string, password: string }): Promise<{ message: string, status: string, tenantId?: string }> {
+        const { tenantId, password } = loginDto;
+
+        // Verificar si el tenantId existe
+        const tenant = await this.tenantsService.getTenantById(tenantId);
+        if (!tenant) {
+            return {
+                message: 'TenantId o password incorrectos.',
+                status: 'error',
+            };
+        }
+
+        // Verificar si la contraseña es correcta
+        const isPasswordValid = await bcrypt.compare(password, tenant.password);
+        if (!isPasswordValid) {
+            return {
+                message: 'TenantId o password incorrectos.',
+                status: 'error',
+            };
+        }
+
+        // Si todo es correcto, retornar un mensaje de bienvenida
+        return {
+            message: 'Bienvenido',
+            status: 'success',
+            tenantId: tenant.tenantId,
+        };
+    }
 }
 
