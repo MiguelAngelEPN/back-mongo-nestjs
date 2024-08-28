@@ -9,7 +9,7 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: process.env.NEXT_PUBLIC_CORS_DIRECTIONS_ACEPT, // Cambia esto al origen que necesites permitir
+    origin: process.env.NEXT_PUBLIC_CORS_DIRECTIONS_ACEPT || true, // Cambia esto al origen que necesites permitir
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true, // Habilitar si usas cookies o autenticación
   });
