@@ -13,7 +13,8 @@ import { KpiDto } from './dto/kpi.dto';
 @Injectable()
 export class EmployeesService {
   constructor(@Inject('EMPLOYEE_MODEL') private EmployeeModel: Model<Employee>,
-    @Inject('TENANT_CONNECTION') private connection: Connection) { }
+    @Inject('TENANT_CONNECTION') private connection: Connection
+  ) { }
 
   private async getModelForTenant(tenantId: string): Promise<Model<Employee & Document>> {
     const modelName = `Employee_${tenantId}`;
@@ -179,6 +180,28 @@ export class EmployeesService {
     return { message: 'Task successfully deleted' };
   }
 
+  async getTaskOfEmployee(employeeId: string, taskId: string, tenantId: string) {//get a specific task
+    if (!Types.ObjectId.isValid(employeeId) || !Types.ObjectId.isValid(taskId)) {
+      throw new BadRequestException('Invalid employee ID or task ID');
+    }
+
+    const EmployeeModel = await this.getModelForTenant(tenantId);
+
+    // Encuentra el empleado y selecciona solo la tarea que coincide con el taskId
+    const employee = await EmployeeModel.findOne(
+      { _id: employeeId, tenantId, 'tasks._id': taskId },
+      { 'tasks.$': 1 } // Solo selecciona la tarea que coincide con taskId
+    );
+
+    if (!employee || !employee.tasks || employee.tasks.length === 0) {
+      throw new NotFoundException('Task not found');
+    }
+
+    const task = employee.tasks[0]; // Como se seleccionó una sola tarea, es seguro tomar el primer elemento
+
+    return task;
+  }
+
   //<-------------------------------------- TaskLogs ----------------------------------------->
 
   async getTasksLogsToTask(employeeId: string, taskId: string, tenantId: string): Promise<any[]> {
@@ -236,35 +259,35 @@ export class EmployeesService {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId) || !isValidObjectId(kpiId)) {
       throw new BadRequestException('Invalid ID');
     }
-  
+
     // Utilizar la función para obtener el KPI por ID
     const kpi = await this.getKPIbyID(employeeId, taskId, kpiId, tenantId);
-  
+
     if (!kpi) {
       throw new NotFoundException('KPI not found');
     }
-  
+
     const EmployeeModel = await this.getModelForTenant(tenantId);
-  
+
     const employee = await EmployeeModel.findOne(
       { _id: employeeId, 'tasks._id': taskId, tenantId },
       { 'tasks.$': 1 }
     );
-  
+
     if (!employee) {
       throw new NotFoundException('Employee or Task not found');
     }
-  
+
     const task = employee.tasks[0];
     const taskLogs = task.tasklogs;
-  
+
     if (!taskLogs || taskLogs.length === 0) {
       return { values: [], kpiPercentage: 0, totalCount: 0, daysConsidered: 0, targetSales: 0 };
     }
-  
+
     const start = new Date(startDate);
     const end = new Date(endDate);
-  
+
     const dayMapping: { [key: string]: number } = {
       sunday: 0,
       monday: 1,
@@ -274,24 +297,24 @@ export class EmployeesService {
       friday: 5,
       saturday: 6,
     };
-  
+
     const excludedDayIndices = excludedDays.map(day => dayMapping[day.toLowerCase()]).filter(dayIndex => dayIndex !== undefined);
-  
+
     const filteredTaskLogs = taskLogs.filter(log => {
       const logDate = new Date(log.registerDate);
       const dayOfWeek = logDate.getDay();
       return logDate >= start && logDate <= end && !excludedDayIndices.includes(dayOfWeek);
     });
-  
+
     const key = kpi.fieldtobeevaluated;
-  
+
     const values = filteredTaskLogs.map((log) => log[key]).filter((value) => value !== undefined);
-  
+
     const uniqueValues = [...new Set(values)];
-  
+
     const kpiTarget = kpi.target || 0;
     const timeUnit = kpi.timeUnit || 1;
-  
+
     let daysConsidered = 0;
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dayOfWeek = d.getDay();
@@ -299,17 +322,17 @@ export class EmployeesService {
         daysConsidered++;
       }
     }
-  
+
     const exactQuotient = daysConsidered / timeUnit;
     const targetSales = exactQuotient * kpiTarget;
-  
+
     const kpiPercentage = targetSales ? (uniqueValues.length / targetSales) * 100 : 0;
     const totalCount = values.length;
-  
+
     return { values, kpiPercentage, totalCount, daysConsidered, targetSales };
   }
-  
-  async getTaskLogKeys(employeeId: string, taskId: string, tenantId: string): Promise<string[]> {
+
+  async getTaskKeys(employeeId: string, taskId: string, tenantId: string): Promise<string[]> {
     if (!isValidObjectId(employeeId) || !isValidObjectId(taskId)) {
       throw new BadRequestException('Invalid ID');
     }
@@ -326,20 +349,9 @@ export class EmployeesService {
     }
 
     const task = employee.tasks[0];
-    const taskLogs = task.tasklogs;
 
-    if (!taskLogs || taskLogs.length === 0) {
-      throw new NotFoundException('No task logs found');
-    }
-
-    const firstTaskLog = taskLogs[0];
-
-    // Comprobar si registerDate está presente
-    if (!firstTaskLog.hasOwnProperty('registerDate')) {
-      firstTaskLog.registerDate = new Date();
-    }
-
-    const validKeys = Object.keys(firstTaskLog).filter(key => {
+    // Obtener las claves válidas del objeto `Task`
+    const validKeys = Object.keys(task).filter(key => {
       return ![
         '__parentArray',
         '__index',
@@ -352,10 +364,11 @@ export class EmployeesService {
 
     return validKeys;
   }
+
   //<-------------------------------------- KPI's ----------------------------------------->
 
   async addTaskToDepartment(department: string, taskDto: CreateTaskDto, tenantId: string): Promise<{ message: string }> {
-    
+
     const EmployeeModel = await this.getModelForTenant(tenantId);
 
     await EmployeeModel.updateMany(
@@ -368,16 +381,16 @@ export class EmployeesService {
 
   async getUniqueDepartments(tenantId: string): Promise<string[]> {
     // Eliminamos la validación de ObjectId si tenantId no es un ObjectId.
-    
+
     const EmployeeModel = await this.getModelForTenant(tenantId);
-    
+
     // Usar el método `distinct` para obtener los valores únicos del campo "department"
     const uniqueDepartments = await EmployeeModel.distinct('department', { tenantId });
-    
+
     if (!uniqueDepartments || uniqueDepartments.length === 0) {
       throw new NotFoundException('No departments found');
     }
-    
+
     return uniqueDepartments;
   }
 

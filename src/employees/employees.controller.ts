@@ -87,6 +87,16 @@ export class EmployeesController {
     return this.employeesService.deleteTask(employeeId, taskId, tenantId);
   }
 
+  @Get(':id/tasks/:taskId')//get a specific task
+  async getTask(
+    @Param('id') employeeId: string,
+    @Param('taskId') taskId: string,
+    @Req() req
+  ) {
+    const tenantId = req['tenantId'];
+    return this.employeesService.getTaskOfEmployee(employeeId, taskId, tenantId);
+  }
+
   //<-------------------------------------- TaskLogs ----------------------------------------->
   @Post(':employeeId/task/:taskId/tasklogs')
   addTaskLogToTask(
@@ -109,14 +119,14 @@ export class EmployeesController {
     return this.employeesService.getTasksLogsToTask(employeeId, taskId, tenantId);
   }
 
-  @Get(':employeeId/tasks/:taskId/tasklog-keys')
-  async getTaskLogKeys(
+  @Get(':employeeId/tasks/:taskId/task-keys')
+  async getTaskKeys(
     @Param('employeeId') employeeId: string,
     @Param('taskId') taskId: string,
     @Req() req
   ): Promise<string[]> {
     const tenantId = req['tenantId'];
-    return this.employeesService.getTaskLogKeys(employeeId, taskId, tenantId);
+    return this.employeesService.getTaskKeys(employeeId, taskId, tenantId);
   }
 
   //<-------------------------------------- KPI's ----------------------------------------->
