@@ -107,6 +107,26 @@ export class EmployeesService {
     return { message: 'Employee successfully deleted' };
   }
 
+  async getEmployeeName(employeeId: string, tenantId: string): Promise<string> {
+    const EmployeeModel = await this.getModelForTenant(tenantId);
+  
+    // Validar que el ID del empleado es válido
+    if (!Types.ObjectId.isValid(employeeId)) {
+      throw new BadRequestException('Invalid employee ID');
+    }
+  
+    // Buscar el empleado por ID y tenantId, y solo seleccionar el campo "name"
+    const employee = await EmployeeModel.findOne({ _id: employeeId, tenantId }, { name: 1 });
+  
+    // Si no se encuentra el empleado, lanzar una excepción
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+  
+    // Retornar el nombre del empleado
+    return employee.name;
+  }
+  
   // <------------------------------------------------------ Tasks ------------------------------------>  
 
   async addTaskToEmployee(employeeId: string, createTaskDto: CreateTaskDto, tenantId: string) {

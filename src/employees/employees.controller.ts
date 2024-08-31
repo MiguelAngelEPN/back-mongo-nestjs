@@ -46,6 +46,15 @@ export class EmployeesController {
     return this.employeesService.deleteEmployee(id, tenantId);
   }
 
+  @Get(':id/name')
+  async getEmployeeName(
+    @Param('id') employeeId: string,
+    @Req() req
+  ): Promise<string> {
+    const tenantId = req['tenantId'];
+    return this.employeesService.getEmployeeName(employeeId, tenantId);
+  }
+
   //<-------------------------------------- Tasks ----------------------------------------->
   @Post(':id/tasks')
   async createTask(
