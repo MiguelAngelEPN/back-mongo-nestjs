@@ -106,6 +106,16 @@ export class EmployeesController {
     return this.employeesService.getTaskOfEmployee(employeeId, taskId, tenantId);
   }
 
+  @Get(':id/tasks/:taskId/title')
+  async getTaskTitle(
+    @Param('id') employeeId: string,
+    @Param('taskId') taskId: string,
+    @Req() req
+  ): Promise<string> {
+    const tenantId = req['tenantId'];
+    return this.employeesService.getTaskTitle(employeeId, taskId, tenantId);
+  }
+
   //<-------------------------------------- TaskLogs ----------------------------------------->
   @Post(':employeeId/task/:taskId/tasklogs')
   addTaskLogToTask(

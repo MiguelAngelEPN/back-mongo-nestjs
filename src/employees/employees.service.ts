@@ -109,24 +109,24 @@ export class EmployeesService {
 
   async getEmployeeName(employeeId: string, tenantId: string): Promise<string> {
     const EmployeeModel = await this.getModelForTenant(tenantId);
-  
+
     // Validar que el ID del empleado es válido
     if (!Types.ObjectId.isValid(employeeId)) {
       throw new BadRequestException('Invalid employee ID');
     }
-  
+
     // Buscar el empleado por ID y tenantId, y solo seleccionar el campo "name"
     const employee = await EmployeeModel.findOne({ _id: employeeId, tenantId }, { name: 1 });
-  
+
     // Si no se encuentra el empleado, lanzar una excepción
     if (!employee) {
       throw new NotFoundException('Employee not found');
     }
-  
+
     // Retornar el nombre del empleado
     return employee.name;
   }
-  
+
   // <------------------------------------------------------ Tasks ------------------------------------>  
 
   async addTaskToEmployee(employeeId: string, createTaskDto: CreateTaskDto, tenantId: string) {
@@ -220,6 +220,31 @@ export class EmployeesService {
     const task = employee.tasks[0]; // Como se seleccionó una sola tarea, es seguro tomar el primer elemento
 
     return task;
+  }
+
+  // Método en el servicio para recuperar el título de la tarea
+  async getTaskTitle(employeeId: string, taskId: string, tenantId: string): Promise<string> {
+    // Obtener el modelo de Employee para el tenant
+    const EmployeeModel = await this.getModelForTenant(tenantId);
+
+    // Validar que ambos IDs sean válidos
+    if (!Types.ObjectId.isValid(employeeId) || !Types.ObjectId.isValid(taskId)) {
+      throw new BadRequestException('Invalid ID');
+    }
+
+    // Buscar el empleado y proyectar solo el título de la tarea específica
+    const employee = await EmployeeModel.findOne(
+      { _id: employeeId, 'tasks._id': taskId, tenantId }, // Filtro por employeeId, taskId, y tenantId
+      { 'tasks.$': 1 } // Proyección: seleccionar solo la tarea con el taskId
+    );
+
+    // Manejar el caso donde el empleado o la tarea no se encuentren
+    if (!employee || employee.tasks.length === 0) {
+      throw new NotFoundException('Employee or Task not found');
+    }
+
+    // Retornar el título de la tarea
+    return employee.tasks[0].title; // Acceder al título de la tarea específica
   }
 
   //<-------------------------------------- TaskLogs ----------------------------------------->
